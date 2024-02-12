@@ -1,6 +1,7 @@
 package Customer;
 
 import java.io.Serializable;
+import DataManagement.*;
 public class Customer implements Serializable{
     private int customerId;
     private String name;
@@ -14,7 +15,7 @@ public class Customer implements Serializable{
         this.email = email;
         this.phone = phone;
     }
-
+    DataFileManager customerData = new DataFileManager();
     // GETTER and SETTER Methods
 
     public int getCustomerId() {
@@ -49,17 +50,4 @@ public class Customer implements Serializable{
         this.phone = phone;
     }
 
-    // Method to convert object to array
-    public Object[] toArray() {
-        return new Object[]{customerId, name, email, phone};
-    }
-
-    // Static method to create Customer object from array
-    public static Customer fromArray(Object[] array) {
-        int customerId = (int) array[0];
-        String name = (String) array[1];
-        String email = (String) array[2];
-        String phone = (String) array[3];
-        return new Customer(customerId, name, email, phone);
-    }
 }

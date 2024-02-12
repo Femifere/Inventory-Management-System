@@ -1,5 +1,8 @@
 package Inventory;
 
+import DataManagement.DataFileManager;
+import Product.Product;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +30,7 @@ public class InventoryManager implements InventoryService {
         // If the item is not present, add it to the inventory
         item.setQuantity(quantity);
         inventoryItems.add(item);
+        DataFileManager.saveInventoryItemData(inventoryItems);
     }
 
     // Method to remove stock of a specific item from the inventory
@@ -49,6 +53,8 @@ public class InventoryManager implements InventoryService {
         }
         // If the item is not found, print a message
         System.out.println("Item not found in inventory: " + item.getName());
+        DataFileManager dataFileManager = new DataFileManager();
+        dataFileManager.deleteInventoryItemData((InventoryItem) inventoryItems);
     }
 
     // Method to get the stock level of a specific item

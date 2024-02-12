@@ -2,11 +2,13 @@ package OrderManagement;
 
 import Customer.Customer;
 import Product.Product;
+import DataManagement.*;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Order {
+public class Order implements Serializable {
     private int orderId;
     private Customer customer;
     private List<Product> products;
@@ -41,15 +43,15 @@ public class Order {
         this.customer = customer;
     }
 
-    public List<Product> getProducts() {
-        return products;
-    }
-
     public void addProduct(Product product, int quantity) {
         products.add(product);
         quantities.add(quantity);
         totalAmount += product.getPrice() * quantity;
+        List<Product> productList = new ArrayList<>();
+        productList.add(product);
+        DataFileManager.saveProductData(productList);
     }
+
 
     public double getTotalAmount() {
         return totalAmount;
@@ -89,6 +91,7 @@ public class Order {
         }
         System.out.println("Total Amount: $" + totalAmount);
         System.out.println("Order Status: " + orderStatus);
+
     }
 
     public double calculateTotal() {
@@ -104,20 +107,61 @@ public class Order {
         // Update order status to one of the four options: "Pending", "Confirmed", "Fulfilled", "Cancelled"
         if (orderStatus.equalsIgnoreCase("Pending") || orderStatus.equalsIgnoreCase("Confirmed") || orderStatus.equalsIgnoreCase("Fulfilled") || orderStatus.equalsIgnoreCase("Cancelled")) {
             this.orderStatus = orderStatus;
+            DataFileManager.updateOrderData(this);
         } else {
             System.out.println("Invalid status. Status must be one of: Pending, Confirmed, Delivered.");
         }
+
     }
-    public boolean containsProduct(Product product) {
-        // Check if the order contains a specific product
-        return products.contains(product);
+    public boolean containsProduct(Product product, int orderId) {
+        // Load all orders
+        List<Order> allOrders = new ArrayList<>(DataFileManager.loadOrderData());
+
+        // Find the current order by its ID
+        Order currentOrder = null;
+        for (Order order : allOrders) {
+            if (order.getOrderId() == orderId) {
+                currentOrder = order;
+                break;
+            }
+        }
+
+        // If the current order is not found, return false
+        if (currentOrder == null) {
+            return false;
+        }
+
+        // Check if the current order contains the specified product
+        for (Product orderProduct : currentOrder.getProductList()) {
+            if (orderProduct.equals(product)) {
+                return true;
+            }
+        }
+
+        return false;
     }
+    public List<Product> getProductList() {
+        // Load products associated with this order from DataFileManager
+        List<Product> productList = DataFileManager.loadProductData();
+
+        // Filter products to include only those belonging to this order
+        List<Product> orderProducts = new ArrayList<>();
+        for (Product product : productList) {
+            if (product.getId() == this.orderId) {
+                orderProducts.add(product);
+            }
+        }
+        return orderProducts;
+    }
+
+
 
     public void removeProduct(Product product, int quantity) {
         // Remove a specified quantity of a product from the order
         for (int i = 0; i < quantity; i++) {
             products.remove(product);
         }
+        DataFileManager.deleteProductData(product);
     }
 
     public int getProductQuantity(Product product) {

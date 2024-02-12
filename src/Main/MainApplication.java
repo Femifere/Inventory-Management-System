@@ -1,21 +1,18 @@
 package Main;
 
-import Customer.Customer;
-import Customer.CustomerService;
-import Customer.CustomerServiceImpl;
-import OrderManagement.Order;
-import OrderManagement.OrderStatus;
-import Product.Product;
-import Product.ProductManager;
-import Staff.StaffService;
-import Staff.StaffServiceImpl;
+import Customer.*;
+import DataManagement.DataFileManager;
+import Inventory.*;
+import OrderManagement.*;
+import Product.*;
+import Staff.*;
 
 import java.util.List;
 import java.util.Scanner;
 
 public class MainApplication {
-    private static Scanner scanner2 = new Scanner(System.in);
 
+    private static Scanner scanner2 = new Scanner(System.in);
     public static void main(String[] args) {
         System.out.println("Welcome to the Main Application!");
 
@@ -65,7 +62,8 @@ public class MainApplication {
             System.out.println("3. View list of products");
             System.out.println("4. Check order status");
             System.out.println("5. Change login information");
-            System.out.println("6. Exit");
+            System.out.println("6. Delete account");
+            System.out.println("7. Exit");
 
             System.out.print("Enter your choice: ");
             int choice = scanner2.nextInt();
@@ -76,53 +74,7 @@ public class MainApplication {
 
             switch (choice) {
                 case 1:
-                    // Order functionality
-                    // Prompt customer for their ID
-                    System.out.println("Please provide your customer ID:");
-                    int customerId = scanner2.nextInt();
-                    scanner2.nextLine(); // Consume newline character
-
-                    // Fetch customer object using the provided ID
-                    Customer customer = customerService.getCustomerById(customerId);
-
-                    if (customer == null) {
-                        System.out.println("Customer not found. Please try again.");
-                        break;
-                    }
-
-                    System.out.println("Order Products:");
-                    // Implement logic to display available products
-                    // Example:
-                    ProductManager productManager = new ProductManager();
-                    List<Product> availableProducts = productManager.getProducts();
-                    for (Product product : availableProducts) {
-                        System.out.println(product.getId() + ". " + product.getName() + " - $" + product.getPrice());
-                    }
-
-                    // Prompt user to select products and quantities
-                    System.out.println("Enter product ID and quantity (e.g., '1 2' for product ID 1 and quantity 2):");
-                    String input = scanner2.nextLine();
-                    String[] parts = input.split(" ");
-
-                    // Create order using the fetched customer object
-                    Order order = new Order(1, customer); // Assuming orderId is available
-                    for (int i = 0; i < parts.length; i += 2) {
-                        int productId = Integer.parseInt(parts[i]);
-                        int quantity = Integer.parseInt(parts[i + 1]);
-                        productManager = new ProductManager();
-                        Product product = productManager.getProductById(productId);
-
-                        // Check if product exists and quantity is valid
-                        if (product != null && quantity > 0) {
-                            order.addProduct(product, quantity);
-                        } else {
-                            System.out.println("Invalid product ID or quantity: " + productId + " " + quantity);
-                        }
-                    }
-
-                    // Add order
-                    order.placeOrder();
-                    System.out.println("Order placed successfully!");
+                    orderHandling(scanner2, customerService);
                     break;
                 case 2:
                     // Create account functionality
@@ -146,6 +98,19 @@ public class MainApplication {
                     changeLoginInformation(customerService);
                     break;
                 case 6:
+                    // Delete account functionality
+                    System.out.println("Enter your customer ID:");
+                    int deleteCustomerId = scanner2.nextInt();
+                    scanner2.nextLine(); // Consume newline character
+                    try {
+                        customerService.deleteCustomer(deleteCustomerId);
+                        DataFileManager.deleteCustomerData(customerService.getCustomerById(deleteCustomerId));
+                        System.out.println("Account deleted successfully!");
+                    } catch (IllegalArgumentException e) {
+                        System.out.println(e.getMessage());
+                    }
+                    break;
+                case 7:
                     System.out.println("Exiting Customer Mode...");
                     return;
                 default:
@@ -155,12 +120,25 @@ public class MainApplication {
     }
 
     private static void handleStaff() {
-        // Implement staff functionality
-        // Provide options to manage products, inventory, customers, etc.
-        // Utilize methods from StaffService, ProductManager, InventoryManager, etc.
         StaffService staffService = new StaffServiceImpl(); // Instantiate StaffService
         ProductManager productManager = new ProductManager(); // Instantiate ProductManager
         CustomerService customerService = new CustomerServiceImpl(); // Instantiate CustomerService
+
+        Scanner scanner = new Scanner(System.in); // Scanner for user input
+
+        // Prompt for login
+        System.out.println("Staff Login:");
+        System.out.print("Username: ");
+        String username = scanner.nextLine();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+
+        // Perform login
+        boolean loggedIn = staffService.login(username, password);
+        if (!loggedIn) {
+            System.out.println("Invalid username or password. Exiting staff mode.");
+            return;
+        }
 
         System.out.println("Welcome, Staff!");
 
@@ -169,11 +147,12 @@ public class MainApplication {
             System.out.println("1. Manage Products");
             System.out.println("2. Manage Orders");
             System.out.println("3. Manage Customers");
-            System.out.println("4. Exit");
+            System.out.println("4. Manage Inventory"); // Newly added option
+            System.out.println("5. Exit");
 
             System.out.print("Enter your choice: ");
-            int choice = scanner2.nextInt();
-            scanner2.nextLine(); // Consume newline character
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline character
 
             switch (choice) {
                 case 1:
@@ -186,6 +165,9 @@ public class MainApplication {
                     manageCustomers();
                     break;
                 case 4:
+                    manageInventory();
+                    break;
+                case 5:
                     System.out.println("Exiting Staff Mode...");
                     return;
                 default:
@@ -193,6 +175,7 @@ public class MainApplication {
             }
         }
     }
+
 
     public static void createAccount(Scanner scanner, CustomerService customerService) {
 
@@ -262,7 +245,9 @@ public class MainApplication {
             System.out.println("1. Add Product");
             System.out.println("2. Edit Product");
             System.out.println("3. Delete Product");
-            System.out.println("4. Back to Staff Menu");
+            System.out.println("4. Get Product by ID");
+            System.out.println("5. Get All Products");
+            System.out.println("6. Back to Staff Menu");
 
             System.out.print("Enter your choice: ");
             int choice = scanner2.nextInt();
@@ -347,6 +332,15 @@ public class MainApplication {
 
                     break;
                 case 4:
+                    System.out.print("Enter product ID to Find: ");
+                    int productIdToFind = scanner2.nextInt();
+                    productManager1.getProductById(productIdToFind);
+                    break;
+                case 5:
+                    System.out.print("Loading All Products... ");
+                    productManager1.getProducts();
+                    break;
+                case 6:
                     System.out.println("Returning to Staff Menu...");
                     return;
                 default:
@@ -554,7 +548,7 @@ public class MainApplication {
     }
     private static void viewProducts() {
         // Update to load products from file using DataFileManager
-        List<Object> productList = DataManagement.DataFileManager.loadData();
+        List<Customer> productList = DataFileManager.loadCustomerData();
         if (productList.isEmpty()) {
             System.out.println("No products available.");
         } else {
@@ -566,5 +560,165 @@ public class MainApplication {
                 }
             }
         }
+    }
+
+    public static void orderHandling(Scanner scanner, CustomerService customerService) {
+        // Prompt customer for their ID
+        System.out.println("Please provide your customer ID:");
+        int customerId = scanner.nextInt();
+        scanner.nextLine(); // Consume newline character
+
+        // Fetch customer object using the provided ID
+        Customer customer = customerService.getCustomerById(customerId);
+
+        if (customer == null) {
+            System.out.println("Customer not found. Please try again.");
+            return;
+        }
+
+        System.out.println("Order Products:");
+        // Implement logic to display available products
+        // Example:
+        ProductManager productManager = new ProductManager();
+        List<Product> availableProducts = productManager.getProducts();
+        for (Product product : availableProducts) {
+            System.out.println(product.getId() + ". " + product.getName() + " - $" + product.getPrice());
+        }
+
+        // Prompt user to select products and quantities
+        System.out.println("Enter product ID and quantity (e.g., '1 2' for product ID 1 and quantity 2):");
+        String input = scanner.nextLine();
+        String[] parts = input.split(" ");
+
+        // Create order using the fetched customer object
+        Order order = new Order(1, customer); // Assuming orderId is available
+        for (int i = 0; i < parts.length; i += 2) {
+            int productId = Integer.parseInt(parts[i]);
+            int quantity = Integer.parseInt(parts[i + 1]);
+            productManager = new ProductManager();
+            Product product = productManager.getProductById(productId);
+
+            // Check if product exists and quantity is valid
+            if (product != null && quantity > 0) {
+                order.addProduct(product, quantity);
+            } else {
+                System.out.println("Invalid product ID or quantity: " + productId + " " + quantity);
+            }
+        }
+
+        // Add order
+        order.placeOrder();
+        System.out.println("Total = " + order.calculateTotal());
+        System.out.println("Order placed successfully!");
+
+        // Additional methods from Order class
+        order.updateStatus("Confirmed");
+        System.out.println("Updated order status: " + order.getOrderStatus());
+
+        Product sampleProduct = availableProducts.get(0); // Assuming there's at least one product available
+        System.out.println("Enter your OrderId");
+        int orderId = scanner2.nextInt();
+        order.removeProduct(sampleProduct, 1); // Remove one sample product
+        System.out.println("Product removed. New order size: " + order.getOrderSize());
+
+        System.out.println("Order contains sample product: " + order.containsProduct(sampleProduct, orderId));
+
+        System.out.println("Quantity of sample product in order: " + order.getProductQuantity(sampleProduct));
+
+        order.displayOrderDetails();
+    }
+    private static InventoryManager inventoryManager = new InventoryManager();
+    private static void manageInventory() {
+        boolean exit = false;
+        while (!exit) {
+            System.out.println("\nPlease select an option:");
+            System.out.println("1. Add Stock");
+            System.out.println("2. Remove Stock");
+            System.out.println("3. Check Stock Level");
+            System.out.println("4. Replenish Stock");
+            System.out.println("5. Adjust Stock");
+            System.out.println("6. View Inventory");
+            System.out.println("7. Calculate Inventory Value");
+            System.out.println("8. Exit");
+            System.out.print("Enter your choice: ");
+
+            int choice = scanner2.nextInt();
+            scanner2.nextLine(); // Consume newline
+
+            Scanner scanner = new Scanner(System.in);
+
+            // Prompt user for item details
+            System.out.print("Enter item name: ");
+            String itemName = scanner.nextLine();
+            System.out.print("Enter item price: ");
+            double itemPrice = scanner.nextDouble();
+            System.out.print("Enter item quantity: ");
+            int itemQuantity = scanner.nextInt();
+            System.out.print("Enter item name: ");
+            String itemDescription = scanner.nextLine();
+
+            // Create InventoryItem object
+            InventoryItem Item = new InventoryItem(itemName, itemPrice, itemQuantity, itemDescription);
+
+            switch (choice) {
+                case 1:
+                    Item.setName(itemName);
+                    Item.setPrice(itemPrice);
+                    Item.setQuantity(itemQuantity);
+                    Item.setDescription(itemDescription);
+                    // Call addStock method with the created object
+                    inventoryManager.addStock(Item, itemQuantity);
+                    break;
+                case 2:
+                    // Prompt user for item details
+                    System.out.print("Enter item name: ");
+                    String itemName2 = scanner2.nextLine();
+                    System.out.print("Enter quantity to remove: ");
+                    int quantityToRemove = scanner2.nextInt();
+
+                    Item.setName(itemName2);
+
+                    // Call removeStock method with the provided information
+                    inventoryManager.removeStock(Item, quantityToRemove);
+                    break;
+                case 3:
+                    // Prompt user for item details
+                    System.out.print("Enter item name: ");
+                    String itemName3 = scanner2.nextLine();
+                    Item.setName(itemName3);
+                    // Call getStockLevel method with the created object
+                    int stockLevel = inventoryManager.getStockLevel(Item);
+                    System.out.println("Stock level for " + itemName3 + " is: " + stockLevel);
+                    break;
+                case 4:
+                    Item.setName(itemName);
+                    Item.setPrice(itemPrice);
+                    Item.setQuantity(itemQuantity);
+                    // Call replenishStock method with the created object
+                    inventoryManager.replenishStock(Item, itemQuantity);
+                    break;
+                case 5:
+                    // Set attributes of the Item object
+                    Item.setName(itemName);
+                    Item.setPrice(itemPrice);
+                    Item.setQuantity(itemQuantity);
+
+                    // Call adjustStock method with the Item object
+                    inventoryManager.adjustStock(Item, itemQuantity);
+                    break;
+                case 6:
+                    inventoryManager.getAllItems();
+                    break;
+                case 7:
+                    inventoryManager.calculateInventoryValue();
+                    break;
+                case 8:
+                    exit = true;
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+        scanner2.close();
     }
 }

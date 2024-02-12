@@ -1,6 +1,7 @@
 package Inventory;
 
-public class InventoryItem {
+import java.io.Serializable;
+public class InventoryItem implements Serializable{
     // Properties
     private String name;
     private double price;
